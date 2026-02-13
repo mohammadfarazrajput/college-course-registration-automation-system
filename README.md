@@ -1,473 +1,238 @@
-# College Course Registration System - Expert Multi-Agent System
-
-A production-ready hybrid application for college course registration with intelligent multi-agent backend and modern React frontend.
-
-## 🎯 Features
-
-### For Students
-- ✅ Intelligent course recommendations based on eligibility
-- ✅ Real-time timetable conflict detection
-- ✅ Automated prerequisite validation
-- ✅ Integrated payment gateway (Razorpay/Stripe)
-- ✅ Waitlist management with auto-promotion
-- ✅ PDF receipt generation
-- ✅ Multi-channel notifications (Email/SMS/In-app)
-- ✅ Real-time registration status tracking
-
-### For Administrators
-- ✅ Approval workflow system (Advisor → HoD → Dean)
-- ✅ Advanced constraint enforcement
-- ✅ Analytics and reporting dashboard
-- ✅ Seat allocation priority management
-- ✅ Revenue tracking and reports
-
-### Technical Highlights
-- 🤖 **10 Specialized AI Agents** using LangGraph
-- ⚡ **Real-time updates** via WebSockets
-- 🔒 **Secure authentication** with JWT
-- 💳 **Integrated payments** (Razorpay/Stripe)
-- 📊 **Advanced analytics** with MongoDB
-- 🎨 **Modern UI** with React + Tailwind CSS
-- 📱 **Fully responsive** design
-- 🧪 **Comprehensive testing** (95%+ coverage goal)
+# 🎓 AMU Course Registration System
+**AI-Powered Academic Registration System for Zakir Husain College of Engineering & Technology**
 
 ---
 
-## 🏗️ System Architecture
+## 📋 Overview
+
+A **production-grade hybrid AI system** combining:
+- **SQL Database** for structured academic data (students, courses, grades)
+- **Vector Database** for semantic ordinance retrieval (RAG)
+- **LangChain Agents** for intelligent reasoning
+- **FastAPI Backend** for robust API layer
+- **Streamlit Frontend** for user interface
+
+**This is NOT a chatbot.** It's a structured academic registration system with AI assistance for complex rule reasoning.
+
+---
+
+## 🏗️ Three-Layer Architecture
 
 ```
-Frontend (React + Vite)
-    ↓ HTTPS/WSS
-API Gateway (FastAPI)
-    ↓
-Agent Orchestrator (LangGraph)
-    ↓
-┌─────────────────────────────────────┐
-│  Core Agents                        │
-│  - Student Agent                    │
-│  - Eligibility Agent                │
-│  - Course Agent                     │
-│  - Registration Agent               │
-│  - Notification Agent               │
-└─────────────────────────────────────┘
-┌─────────────────────────────────────┐
-│  Advanced Agents                    │
-│  - Timetable Agent                  │
-│  - Payment Agent                    │
-│  - Approval Agent                   │
-│  - Waitlist Agent                   │
-│  - Reporting Agent                  │
-└─────────────────────────────────────┘
-    ↓
-Data Layer (PostgreSQL + Redis + MongoDB)
+┌───────────────────────────────────────┐
+│       LAYER 1: SQL Database           │
+│  Students | Courses | Registrations   │
+│  Grades | CGPA | Eligibility          │
+│  ✓ ACID Transactions                  │
+│  ✓ Source of Truth                    │
+└───────────────────────────────────────┘
+
+┌───────────────────────────────────────┐
+│    LAYER 2: Vector Database (FAISS)   │
+│  Ordinances | Curriculum Policies     │
+│  Amendments | Regulations             │
+│  ✓ Semantic Search (RAG)              │
+│  ✓ Knowledge Retrieval                │
+└───────────────────────────────────────┘
+
+┌───────────────────────────────────────┐
+│     LAYER 3: Document Storage         │
+│  Raw PDFs | Student Uploads           │
+│  ✓ Archival                           │
+│  ✓ Processing Pipeline                │
+└───────────────────────────────────────┘
 ```
 
 ---
 
-## 📋 Prerequisites
+## ✨ Key Features
 
-- **Python** 3.10+
-- **Node.js** 18+
-- **PostgreSQL** 14+
-- **Redis** 7+
-- **MongoDB** 6+ (optional, for logs)
-- **Docker** & Docker Compose (for easy setup)
+✅ Student verification with faculty/enrollment number
+✅ Eligibility analysis (AMU ordinance-compliant)
+✅ Course recommendations (Current + Backlogs + Advancement)
+✅ Marksheet upload with OCR extraction
+✅ RAG-powered chat for rule queries
+✅ Multi-mode registration (A/B/C)
+✅ Risk detection (name removal warnings)
 
 ---
 
-## 🚀 Quick Start (Docker)
+## 🚀 Quick Start
 
-### 1. Clone Repository
+### Prerequisites
+- Python 3.10+
+- Tesseract OCR
+- OpenAI or Anthropic API key
+
+### Installation
+
 ```bash
-git clone <repository-url>
-cd college-registration-system
-```
+# 1. Clone and setup
+git clone <repo>
+cd amu-registration-system
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-### 2. Environment Setup
-```bash
+# 2. Install dependencies
+cd backend && pip install -r requirements.txt
+cd ../frontend && pip install -r requirements.txt
+
+# 3. Configure environment
+cd ..
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your API keys
+
+# 4. Initialize system
+cd scripts
+python seed_database.py      # Populate SQL database
+python build_vector_index.py # Build vector store
 ```
 
-### 3. Start Services
-```bash
-docker-compose up -d
-```
+### Run Application
 
-This will start:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- PostgreSQL: localhost:5432
-- Redis: localhost:6379
-- MongoDB: localhost:27017
-
-### 4. Initialize Database
-```bash
-docker-compose exec backend alembic upgrade head
-docker-compose exec backend python scripts/seed_data.py
-```
-
-### 5. Access Application
-- **Student Portal**: http://localhost:5173
-- **API Docs**: http://localhost:8000/docs
-- **Admin Panel**: http://localhost:5173/admin
-
----
-
-## 🛠️ Manual Setup
-
-### Backend Setup
-
+**Terminal 1 - Backend:**
 ```bash
 cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Setup environment
-cp .env.example .env
-# Edit .env with your credentials
-
-# Initialize database
-alembic upgrade head
-
-# Seed initial data
-python scripts/seed_data.py
-
-# Run development server
-uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+python main.py
 ```
+→ http://localhost:8000
 
-### Frontend Setup
-
+**Terminal 2 - Frontend:**
 ```bash
 cd frontend
+streamlit run app.py
+```
+→ http://localhost:8501
 
-# Install dependencies
-npm install
+---
 
-# Setup environment
-cp .env.example .env
-# Edit .env with API URL
+## 📁 Project Structure
 
-# Run development server
-npm run dev
+```
+amu-registration-system/
+│
+├── backend/
+│   ├── agents/                  # LangChain agents
+│   │   ├── graph.py            # Main orchestrator
+│   │   ├── verification_agent.py
+│   │   ├── eligibility_agent.py
+│   │   ├── course_selector.py
+│   │   └── registration_agent.py
+│   │
+│   ├── services/                # Core services
+│   │   ├── vector_store.py     # FAISS operations
+│   │   ├── retriever.py        # RAG retrieval
+│   │   ├── document_processor.py
+│   │   └── ocr_service.py
+│   │
+│   ├── models.py               # SQLAlchemy models
+│   ├── business_rules.py       # AMU rules logic
+│   ├── database.py             # DB connection
+│   ├── schemas.py              # Pydantic schemas
+│   └── main.py                 # FastAPI app
+│
+├── frontend/
+│   ├── app.py
+│   └── pages/
+│       ├── dashboard.py
+│       ├── courses.py
+│       ├── registration.py
+│       └── chat.py
+│
+├── data/
+│   ├── raw/ordinances/        # AMU PDFs
+│   ├── processed/             # Parsed data
+│   ├── vector_store/          # FAISS index
+│   ├── uploads/               # Student uploads
+│   └── database.db            # SQLite DB
+│
+└── scripts/
+    ├── parse_curriculum.py
+    ├── seed_database.py
+    └── build_vector_index.py
 ```
 
 ---
 
-## ⚙️ Configuration
+## 🎓 AMU Business Rules
 
-### Environment Variables
+### Promotion (Clause 11.1)
+- Sem 2: Min 16 credits
+- Sem 4: Min 60 credits (36 from Sem 1-2)
+- Sem 6: Min 108 credits (80 from Sem 1-4)
 
-#### Backend (.env)
-```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/college_registration
-REDIS_URL=redis://localhost:6379/0
-MONGODB_URL=mongodb://localhost:27017/college_logs
+### Name Removal
+"Not Promoted" ≥ 3 times → Removed from rolls
 
-# Authentication
-SECRET_KEY=your-super-secret-key-change-this
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+### Advancement (Clause 7.2 j)
+- Must be Sem 5/6
+- CGPA ≥ 7.5
+- No backlogs
+- Prerequisites met
 
-# AI/LLM
-ANTHROPIC_API_KEY=your-anthropic-key
-OPENAI_API_KEY=your-openai-key
+### Registration Modes
+- **Mode A:** Full attendance + all evaluations
+- **Mode B:** Evaluations only (if attendance done)
+- **Mode C:** End-sem only (sessional marks reused)
 
-# Payment Gateway
-RAZORPAY_KEY_ID=your-razorpay-key-id
-RAZORPAY_KEY_SECRET=your-razorpay-secret
-STRIPE_SECRET_KEY=your-stripe-secret
+---
 
-# Email & SMS
-SENDGRID_API_KEY=your-sendgrid-key
-TWILIO_ACCOUNT_SID=your-twilio-sid
-TWILIO_AUTH_TOKEN=your-twilio-token
-TWILIO_PHONE_NUMBER=+1234567890
+## 🔧 Tech Stack
 
-# File Storage
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
-AWS_S3_BUCKET=college-registration-docs
+| Component | Technology |
+|-----------|-----------|
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Orchestration | LangChain |
+| SQL DB | SQLAlchemy + SQLite |
+| Vector DB | FAISS |
+| LLM | GPT-4 / Claude 3.5 |
+| OCR | Pytesseract |
 
-# Application
-BACKEND_URL=http://localhost:8000
-FRONTEND_URL=http://localhost:5173
-ENVIRONMENT=development
+---
 
-# RPUIT Integration
-RPUIT_API_URL=http://rpuit.example.com/api
-RPUIT_API_KEY=your-rpuit-key
+## 📊 Data Flows
+
+### Registration Flow
+```
+Login → Fetch Data (SQL) → Check Eligibility (RAG) 
+→ Recommend Courses (SQL) → Validate → Register (SQL)
 ```
 
-#### Frontend (.env)
-```bash
-VITE_API_URL=http://localhost:8000
-VITE_WS_URL=ws://localhost:8000
-VITE_RAZORPAY_KEY=your-razorpay-key
-VITE_ENVIRONMENT=development
+### Marksheet Upload
+```
+Upload → OCR → Parse Tables
+├─ Structured (marks/grades) → SQL
+└─ Unstructured (remarks) → Vector DB
+```
+
+### RAG Query
+```
+User Question → Embed → Retrieve Ordinances (Vector DB)
+→ Fetch Student Data (SQL) → LLM Reasoning → Answer
 ```
 
 ---
 
-## 📚 API Documentation
+## 📚 API Docs
 
-### Authentication
-```bash
-POST /api/auth/login
-POST /api/auth/register
-POST /api/auth/refresh
-POST /api/auth/logout
-```
+Visit http://localhost:8000/docs when backend is running.
 
-### Student
-```bash
-GET  /api/students/profile
-GET  /api/students/academic-record
-PUT  /api/students/profile
-```
-
-### Registration
-```bash
-POST /api/registration/start
-GET  /api/registration/status/{faculty_number}
-POST /api/registration/courses/select
-DELETE /api/registration/courses/{course_code}
-```
-
-### Courses
-```bash
-GET  /api/courses
-GET  /api/courses/{course_code}
-GET  /api/courses/available
-POST /api/courses/check-prerequisites
-```
-
-### Timetable
-```bash
-POST /api/timetable/check-conflicts
-GET  /api/timetable/weekly/{faculty_number}
-```
-
-### Payment
-```bash
-POST /api/payment/calculate
-POST /api/payment/initiate
-POST /api/payment/verify
-POST /api/payment/webhook
-```
-
-### Approval
-```bash
-GET  /api/approvals/pending
-POST /api/approvals/{id}/approve
-POST /api/approvals/{id}/reject
-```
-
-Full API documentation: http://localhost:8000/docs
+**Key Endpoints:**
+- `POST /api/auth/login`
+- `GET /api/eligibility/{student_id}`
+- `POST /api/chat`
 
 ---
 
 ## 🧪 Testing
 
-### Backend Tests
 ```bash
 cd backend
-
-# Run all tests
 pytest
-
-# With coverage
-pytest --cov=. --cov-report=html
-
-# Run specific test file
-pytest tests/test_agents/test_eligibility_agent.py
-
-# Run with verbose output
-pytest -v -s
-```
-
-### Frontend Tests
-```bash
-cd frontend
-
-# Run tests
-npm test
-
-# With coverage
-npm run test:coverage
-
-# E2E tests
-npm run test:e2e
+python -m agents.eligibility_agent  # Test individual agent
 ```
 
 ---
 
-## 📊 Agent Responsibilities
-
-| Agent | Purpose | LLM Usage |
-|-------|---------|-----------|
-| **Student Agent** | Fetch & validate student data from RPUIT | Medium |
-| **Eligibility Agent** | Check constraints, backs, advancement | High |
-| **Course Agent** | Manage course catalog, prerequisites | Medium |
-| **Registration Agent** | Execute registration, generate forms | Low |
-| **Notification Agent** | Send multi-channel notifications | Low |
-| **Timetable Agent** | Detect conflicts, optimize schedule | Medium |
-| **Payment Agent** | Process payments, generate receipts | Low |
-| **Approval Agent** | Manage approval workflows | Medium |
-| **Waitlist Agent** | Handle waitlist, auto-promote | Low |
-| **Reporting Agent** | Generate analytics, insights | High |
-
----
-
-## 🔒 Security Features
-
-- ✅ JWT-based authentication
-- ✅ Rate limiting (100 req/hour per IP)
-- ✅ CORS protection
-- ✅ SQL injection prevention (SQLAlchemy ORM)
-- ✅ XSS protection
-- ✅ CSRF tokens
-- ✅ Encrypted passwords (bcrypt)
-- ✅ Secure payment integration
-- ✅ Audit logging for all actions
-- ✅ Role-based access control (RBAC)
-
----
-
-## 🎨 UI Components
-
-### Key Screens
-1. **Login Page** - Authentication with SSO support
-2. **Dashboard** - Overview, notifications, quick actions
-3. **Course Selection** - Smart filtering, search, recommendations
-4. **Timetable View** - Weekly calendar, conflict highlighting
-5. **Payment Page** - Razorpay integration, receipt download
-6. **Profile Page** - Academic record, documents
-7. **Admin Panel** - Approvals, reports, analytics
-
----
-
-## 📱 Mobile Responsiveness
-
-All screens are fully responsive:
-- Desktop: 1920x1080+
-- Tablet: 768x1024
-- Mobile: 375x667+
-
----
-
-## 🚢 Deployment
-
-### Production Deployment (Docker)
-
-```bash
-# Build production images
-docker-compose -f docker-compose.prod.yml build
-
-# Start services
-docker-compose -f docker-compose.prod.yml up -d
-
-# Run migrations
-docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head
-```
-
-### Manual Deployment
-
-#### Backend (AWS/GCP/Azure)
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export ENVIRONMENT=production
-export DATABASE_URL=postgresql://...
-
-# Run with gunicorn
-gunicorn api.main:app -w 4 -k uvicorn.workers.UvicornWorker
-```
-
-#### Frontend (Vercel/Netlify)
-```bash
-# Build
-npm run build
-
-# Deploy
-npm run deploy
-```
-
----
-
-## 📈 Monitoring
-
-### Metrics to Track
-- Registration success rate
-- Payment completion rate
-- Agent response times
-- API latency
-- Error rates
-- User satisfaction scores
-
-### Tools
-- **Backend**: Prometheus + Grafana
-- **Frontend**: Sentry for error tracking
-- **Logs**: ELK Stack (Elasticsearch, Logstash, Kibana)
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
-### Code Style
-- **Python**: Black formatter, flake8 linting
-- **JavaScript**: ESLint, Prettier
-- **Commits**: Conventional commits format
-
----
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
----
-
-## 👥 Support
-
-For issues and questions:
-- 📧 Email: support@college.edu
-- 💬 Slack: #registration-support
-- 📞 Phone: +91-XXXX-XXXX
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1 (Current)
-- [x] Core registration flow
-- [x] Payment integration
-- [x] Basic agents
-
-### Phase 2 (Next)
-- [ ] Mobile app (React Native)
-- [ ] AI course recommendations
-- [ ] Predictive analytics
-
-### Phase 3 (Future)
-- [ ] Voice-based registration
-- [ ] Blockchain certificates
-- [ ] Integration with learning management system
-
----
-
-**Built with ❤️ for better education**
+**Built for AMU ZHCET** 🎓
