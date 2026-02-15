@@ -84,6 +84,7 @@ class CourseSelectorAgent:
             "course_id": course.id,
             "course_code": course.course_code,
             "course_name": course.course_name,
+            "category": course.category.value if hasattr(course.category, 'value') else course.category,
             "credits": course.credits,
             "semester": course.semester,
             "is_theory": course.is_theory,
