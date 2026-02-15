@@ -236,3 +236,8 @@ python -m agents.eligibility_agent  # Test individual agent
 ---
 
 **Built for AMU ZHCET** 🎓
+
+
+# To run the project
+./run_backend.bat
+./run_frontend.bat
