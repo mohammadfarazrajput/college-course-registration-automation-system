@@ -8,17 +8,38 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pathlib import Path
 from datetime import datetime
+from contextlib import asynccontextmanager
 
 from database import get_db, init_db
 from models import Student, Course, Registration, ChatHistory, AcademicRecord
-from schemas import *
-from business_rules import *
+from schemas import (
+    LoginRequest, LoginResponse,
+    ChatMessage, ChatResponse,
+    RegistrationCreate, RegistrationStatusEnum, RegistrationTypeEnum, RegistrationModeEnum
+)
+from business_rules import (
+    check_promotion_eligibility,
+    check_name_removal_risk,
+    check_advance_eligibility
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_db()
+    print("✅ Backend started")
+    yield
+    # Shutdown
+    print("👋 Backend shutdown")
+
 
 # Initialize FastAPI
 app = FastAPI(
     title="AMU Course Registration System",
     description="AI-Powered Registration for ZHCET",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS
@@ -32,12 +53,6 @@ app.add_middleware(
 
 # Create directories
 Path("../data/uploads").mkdir(parents=True, exist_ok=True)
-
-
-@app.on_event("startup")
-async def startup():
-    init_db()
-    print("✅ Backend started")
 
 
 @app.get("/")
@@ -73,139 +88,64 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 @app.get("/api/eligibility/{student_id}")
 async def check_eligibility(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == student_id).first()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    from agents.eligibility_agent import create_eligibility_agent
     
-    records = db.query(AcademicRecord).filter(AcademicRecord.student_id == student_id).all()
+    agent = create_eligibility_agent(db)
+    result = agent.analyze_eligibility(student_id)
     
-    # Calculate semester credits
-    sem_credits = {}
-    for r in records:
-        if r.status == "PASSED":
-            course = db.query(Course).filter(Course.id == r.course_id).first()
-            if course:
-                sem_credits[r.semester] = sem_credits.get(r.semester, 0) + course.credits
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     
-    # Check promotion
-    can_promote, promo_reason = check_promotion_eligibility(
-        student.current_semester, student.total_earned_credits, sem_credits
-    )
-    
-    # Check risk
-    risk_level, action, risk_msg = check_name_removal_risk(student.not_promoted_count)
-    
-    # Get backlogs
-    backlogs = []
-    for r in records:
-        if r.grade in ["E", "F"]:
-            course = db.query(Course).filter(Course.id == r.course_id).first()
-            if course:
-                backlogs.append({
-                    "course_code": course.course_code,
-                    "course_name": course.course_name,
-                    "credits": course.credits
-                })
-    
-    has_backlogs = len(backlogs) > 0
-    can_advance, adv_reason = check_advance_eligibility(
-        student.current_semester, student.cgpa, has_backlogs
-    )
-    
-    allowed_types = []
-    if risk_level != "CRITICAL":
-        allowed_types.append("CURRENT")
-    if has_backlogs:
-        allowed_types.append("BACKLOG")
-    if can_advance:
-        allowed_types.append("ADVANCE")
-    
-    return {
-        "student_id": student.id,
-        "current_semester": student.current_semester,
-        "cgpa": student.cgpa,
-        "total_earned_credits": student.total_earned_credits,
-        "status": "BLOCKED" if risk_level == "CRITICAL" else "ELIGIBLE",
-        "can_register": risk_level != "CRITICAL",
-        "can_advance": can_advance,
-        "has_backlogs": has_backlogs,
-        "backlog_count": len(backlogs),
-        "allowed_registration_types": allowed_types,
-        "risk_level": risk_level,
-        "backlog_courses": backlogs
-    }
+    return result
 
 
 @app.get("/api/courses/recommend/{student_id}")
 async def recommend_courses(student_id: int, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == student_id).first()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    from agents.eligibility_agent import create_eligibility_agent
+    from agents.course_selector import create_course_selector_agent
     
-    # Get current courses
-    courses = db.query(Course).filter(
-        Course.branch == student.branch,
-        Course.semester == student.current_semester
-    ).all()
+    # Get eligibility first
+    eligibility_agent = create_eligibility_agent(db)
+    eligibility = eligibility_agent.analyze_eligibility(student_id)
     
-    current = [
-        {
-            "course_id": c.id,
-            "course_code": c.course_code,
-            "course_name": c.course_name,
-            "credits": c.credits
-        }
-        for c in courses
-    ]
+    if "error" in eligibility:
+        raise HTTPException(status_code=404, detail=eligibility["error"])
     
-    return {
-        "student_id": student.id,
-        "semester": student.current_semester,
-        "courses": {"current": current, "backlogs": [], "advance": []},
-        "total_credits": sum(c["credits"] for c in current)
-    }
+    # Get course recommendations
+    selector = create_course_selector_agent(db)
+    recommendations = selector.recommend_courses(student_id, eligibility)
+    
+    if "error" in recommendations:
+        raise HTTPException(status_code=404, detail=recommendations["error"])
+    
+    return recommendations
 
 
 @app.post("/api/registration/submit")
 async def submit_registration(request: RegistrationCreate, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.id == request.student_id).first()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    from agents.registration_agent import create_registration_agent
     
-    courses = db.query(Course).filter(Course.id.in_(request.course_ids)).all()
-    total_credits = sum(c.credits for c in courses)
+    agent = create_registration_agent(db)
+    result = agent.submit_registration(
+        request.student_id,
+        request.course_ids,
+        request.registration_mode.value if hasattr(request.registration_mode, 'value') else request.registration_mode
+    )
     
-    if total_credits > 40:
-        raise HTTPException(status_code=400, detail="Credit limit exceeded")
-    
-    reg_ids = []
-    for cid in request.course_ids:
-        reg = Registration(
-            student_id=request.student_id,
-            course_id=cid,
-            semester=student.current_semester,
-            registration_type=RegistrationTypeEnum.CURRENT,
-            registration_mode=request.registration_mode,
-            status=RegistrationStatusEnum.CONFIRMED,
-            confirmed_at=datetime.utcnow()
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("message", "Registration failed")
         )
-        db.add(reg)
-        db.flush()
-        reg_ids.append(reg.id)
     
-    db.commit()
-    
-    return {
-        "success": True,
-        "message": f"Registered for {len(request.course_ids)} courses",
-        "registration_ids": reg_ids,
-        "total_credits": total_credits
-    }
+    return result
 
 
 @app.post("/api/chat")
 async def chat(message: ChatMessage, db: Session = Depends(get_db)):
-    # Placeholder - will connect to LangChain agents
+    from agents.graph import create_orchestrator
+    
+    # Save user message
     user_chat = ChatHistory(
         student_id=message.student_id,
         message=message.message,
@@ -214,17 +154,41 @@ async def chat(message: ChatMessage, db: Session = Depends(get_db)):
     db.add(user_chat)
     db.commit()
     
-    response = "Chat agent coming soon with RAG integration."
-    
-    agent_chat = ChatHistory(
-        student_id=message.student_id,
-        message=response,
-        sender="AGENT"
-    )
-    db.add(agent_chat)
-    db.commit()
-    
-    return {"response": response}
+    # Create orchestrator and get response
+    try:
+        orchestrator = create_orchestrator(db)
+        result = orchestrator.handle_chat(message.student_id, message.message)
+        
+        response_text = result.get("response", "I couldn't process that request.")
+        
+        # Save agent response
+        agent_chat = ChatHistory(
+            student_id=message.student_id,
+            message=response_text,
+            sender="AGENT",
+            agent_type="orchestrator"
+        )
+        db.add(agent_chat)
+        db.commit()
+        
+        return {
+            "response": response_text,
+            "context": result.get("context"),
+            "sources": result.get("sources", [])
+        }
+    except Exception as e:
+        print(f"Chat error: {e}")
+        fallback = "I'm having trouble right now. Please try again or check the eligibility page."
+        
+        agent_chat = ChatHistory(
+            student_id=message.student_id,
+            message=fallback,
+            sender="AGENT"
+        )
+        db.add(agent_chat)
+        db.commit()
+        
+        return {"response": fallback}
 
 
 if __name__ == "__main__":

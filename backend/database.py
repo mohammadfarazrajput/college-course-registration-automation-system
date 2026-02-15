@@ -17,7 +17,12 @@ DATABASE_DIR = Path(__file__).parent.parent / "data"
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASE_PATH = DATABASE_DIR / "database.db"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+# Ensure path string is compatible with SQLAlchemy on Windows
+if os.name == 'nt':
+    path_str = str(DATABASE_PATH).replace('\\', '/')
+    DATABASE_URL = f"sqlite:///{path_str}"
+else:
+    DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 # Create engine
 engine = create_engine(
