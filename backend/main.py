@@ -12,6 +12,12 @@ from contextlib import asynccontextmanager
 
 from database import get_db, init_db
 from models import Student, Course, Registration, ChatHistory, AcademicRecord
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv(Path(__file__).parent.parent / ".env")
+
 from schemas import (
     LoginRequest, LoginResponse,
     ChatMessage, ChatResponse,

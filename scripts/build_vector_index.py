@@ -1,37 +1,49 @@
+
 """
-Build FAISS Vector Index from AMU Ordinances
-Processes ordinance PDFs and creates searchable vector store
+Build FAISS Vector Index from All AMU PDFs (Curriculum & Ordinances)
+Indices:
+1. Ordinances (Rules, Regulations)
+2. Curriculum (Course Descriptions, Outcomes)
 """
 
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent / "backend"))
 
 from backend.services.document_processor import document_processor
 from backend.services.vector_store import vector_store
 import pdfplumber
+import os
+from dotenv import load_dotenv
 
+load_dotenv(Path(__file__).parent.parent / ".env")
 
-def process_ordinance_pdf(pdf_path: Path) -> list:
-    """Process ordinance PDF and extract chunks"""
-    print(f"📄 Processing: {pdf_path.name}")
+def process_pdf(pdf_path: Path, doc_type: str) -> list:
+    """Process PDF and extract text chunks"""
+    print(f"📄 Processing [{doc_type}]: {pdf_path.name}")
     
     chunks = []
     
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            # Extract all text
             full_text = ""
-            for page in pdf.pages:
+            for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
                 if text:
+                    # Clean up text (remove excessive whitespace)
+                    text = " ".join(text.split())
                     full_text += text + "\n\n"
+            
+            if not full_text.strip():
+                print(f"   ⚠️  No text found in {pdf_path.name}")
+                return []
             
             # Chunk the document
             text_chunks = document_processor.chunk_document(
                 full_text,
-                chunk_size=800,
-                overlap=100
+                chunk_size=1000,
+                overlap=200
             )
             
             # Add metadata
@@ -41,79 +53,77 @@ def process_ordinance_pdf(pdf_path: Path) -> list:
                     "metadata": {
                         "source": pdf_path.name,
                         "chunk_id": i,
-                        "document_type": "ordinance"
+                        "document_type": doc_type,
+                        "path": str(pdf_path)
                     }
                 })
             
             print(f"   ✅ Created {len(chunks)} chunks")
     
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"   ❌ Error processing {pdf_path.name}: {e}")
     
     return chunks
 
 
 def build_vector_index():
-    """Build vector index from ordinance PDFs"""
     print("=" * 60)
-    print("Building FAISS Vector Index")
+    print("Building Global Vector Index (Ordinances + Curriculum)")
     print("=" * 60)
     
-    # Find ordinance PDFs
-    pdf_dir = Path(__file__).parent.parent / "data" / "raw"
-    if not pdf_dir.exists():
-        pdf_dir = Path("/mnt/user-data/uploads")
+    data_dir = Path(__file__).parent.parent / "data" / "raw"
     
-    ordinance_files = [
-        "btech_23_99.pdf",  # Main ordinances
-    ]
+    if not data_dir.exists():
+        print(f"❌ Data directory not found: {data_dir}")
+        return
     
     all_chunks = []
     
-    for filename in ordinance_files:
-        pdf_path = pdf_dir / filename
-        
-        if not pdf_path.exists():
-            print(f"⚠️  File not found: {filename}")
-            continue
-        
-        chunks = process_ordinance_pdf(pdf_path)
+    # 1. Scan Ordinances
+    ordinance_dir = data_dir / "ordinances"
+    if ordinance_dir.exists():
+        for pdf_file in ordinance_dir.glob("*.pdf"):
+            chunks = process_pdf(pdf_file, "ordinance")
+            all_chunks.extend(chunks)
+            
+    # 2. Scan Curriculum
+    curriculum_dir = data_dir / "curriculum"
+    if curriculum_dir.exists():
+        for pdf_file in curriculum_dir.glob("*.pdf"):
+            chunks = process_pdf(pdf_file, "curriculum")
+            all_chunks.extend(chunks)
+            
+    # 3. Check for root level PDFs (e.g., if organized flatly)
+    for pdf_file in data_dir.glob("*.pdf"):
+        chunks = process_pdf(pdf_file, "general")
         all_chunks.extend(chunks)
-    
+
     if not all_chunks:
-        print("❌ No documents to index!")
+        print("❌ No documents found to index!")
         return
     
-    print(f"\n📊 Total chunks: {len(all_chunks)}")
+    print(f"\n📊 Total chunks collected: {len(all_chunks)}")
     print("🔨 Building FAISS index...")
     
-    # Add to vector store
-    texts = [chunk["text"] for chunk in all_chunks]
-    metadatas = [chunk["metadata"] for chunk in all_chunks]
-    
-    vector_store.add_documents(texts, metadatas)
-    
-    # Save index
-    print("💾 Saving vector store...")
-    vector_store.save()
-    
-    # Show stats
-    stats = vector_store.get_stats()
-    print(f"\n✅ Vector store built successfully!")
-    print(f"   📊 Total documents: {stats['total_documents']}")
-    print(f"   📊 Index size: {stats['index_size']}")
-    print(f"   📊 Dimension: {stats['dimension']}")
-    
-    # Test search
-    print("\n🔍 Testing search...")
-    test_query = "promotion requirements credits"
-    results = vector_store.similarity_search(test_query, k=2)
-    
-    if results:
-        print(f"   ✅ Found {len(results)} results for: '{test_query}'")
-        print(f"   📄 Top result preview: {results[0]['text'][:150]}...")
-    else:
-        print("   ⚠️  No results found")
+    try:
+        # Add to vector store
+        texts = [chunk["text"] for chunk in all_chunks]
+        metadatas = [chunk["metadata"] for chunk in all_chunks]
+        
+        vector_store.add_documents(texts, metadatas)
+        
+        # Save index
+        print("💾 Saving vector store...")
+        vector_store.save()
+        
+        # Show stats
+        stats = vector_store.get_stats()
+        print(f"\n✅ Vector store build COMPLETE!")
+        print(f"   Docs: {stats['total_documents']}")
+        print(f"   Size: {stats['index_size']}")
+        
+    except Exception as e:
+        print(f"❌ Error building index: {e}")
 
 
 if __name__ == "__main__":

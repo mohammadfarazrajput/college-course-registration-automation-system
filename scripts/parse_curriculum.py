@@ -13,7 +13,7 @@ import pdfplumber
 sys.path.append(str(Path(__file__).parent.parent))
 
 # PDF paths
-PDF_DIR = Path(__file__).parent.parent / "data" / "raw"
+PDF_DIR = Path(__file__).parent.parent / "data" / "raw" / "curriculum"
 
 # Branch curriculum files
 CURRICULUM_FILES = {
@@ -54,6 +54,7 @@ def parse_course_code(code_str):
     else:
         course_type = "theory"
     
+
     return {
         "department": dept,
         "category": category,
@@ -64,13 +65,60 @@ def parse_course_code(code_str):
     }
 
 
+def parse_semester_from_text(text):
+    """Extract semester number from text (digits or roman numerals)"""
+    if not text:
+        return None
+    
+    # Try digit first
+    # e.g. "Semester 3", "Semester-3", "Semester: 3", "Third Semester"
+    
+    # Look for "Semester X" pattern
+    match = re.search(r'(?:Semester|Sem)[-:\s]+(\d+)', text, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    
+    # Look for Roman numerals
+    # e.g. "Semester III", "Semester-IV"
+    match = re.search(r'(?:Semester|Sem)[-:\s]+([IVX]+)\b', text, re.IGNORECASE)
+    if match:
+        roman = match.group(1).upper()
+        romans = {
+            'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 
+            'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10
+        }
+        return romans.get(roman)
+    
+    # Look for ordinal words
+    # e.g. "Third Semester"
+    ordinals = {
+        'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 
+        'fifth': 5, 'sixth': 6, 'seventh': 7, 'eighth': 8
+    }
+    for word, num in ordinals.items():
+        if re.search(rf'\b{word}\s+semester\b', text, re.IGNORECASE):
+            return num
+            
+    return None
+
+
 def extract_courses_from_pdf(pdf_path, branch):
     """Extract courses from curriculum PDF"""
     courses = []
     
     try:
         with pdfplumber.open(pdf_path) as pdf:
+            current_semester = None
+            
             for page_num, page in enumerate(pdf.pages, 1):
+                # Try to detect semester from page text
+                text = page.extract_text() or ""
+                page_sem = parse_semester_from_text(text)
+                
+                if page_sem:
+                    current_semester = page_sem
+
+                
                 # Extract tables
                 tables = page.extract_tables()
                 
@@ -78,18 +126,27 @@ def extract_courses_from_pdf(pdf_path, branch):
                     if not table or len(table) < 2:
                         continue
                     
-                    # Look for semester indicator in table
-                    semester = None
+                    # Look for semester indicator in table explicitly
+                    table_semester = None
                     for row in table[:3]:
-                        text = ' '.join([str(cell) for cell in row if cell])
-                        sem_match = re.search(r'Semester[:\s]+(\d+)', text, re.IGNORECASE)
-                        if sem_match:
-                            semester = int(sem_match.group(1))
+                        row_text = ' '.join([str(cell) for cell in row if cell])
+                        sem = parse_semester_from_text(row_text)
+                        if sem:
+                            table_semester = sem
                             break
+                    
+                    # Use table semester if found, else fallback to page/current semester
+                    semester = table_semester if table_semester else current_semester
                     
                     if not semester:
                         # Try to detect from previous rows
+
                         continue
+                    
+                    
+                    # Parse course rows
+                    
+
                     
                     # Parse course rows
                     for row in table[1:]:  # Skip header
@@ -108,9 +165,11 @@ def extract_courses_from_pdf(pdf_path, branch):
                                 continue
                             
                             cell_str = str(cell).strip()
+
                             
                             # Course code (e.g., AIC2022)
                             if re.match(r'^[A-Z]{2,3}[A-Z]\d{4,5}$', cell_str):
+
                                 course_code = cell_str
                                 code_info = parse_course_code(cell_str)
                                 if code_info:

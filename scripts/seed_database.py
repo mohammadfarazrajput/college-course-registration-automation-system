@@ -203,6 +203,16 @@ def generate_academic_records(db):
                 else:
                     marks = random.randint(35, 95)
                 
+                # Check if record already exists
+                existing_record = db.query(AcademicRecord).filter(
+                    AcademicRecord.student_id == student.id,
+                    AcademicRecord.course_id == course.id,
+                    AcademicRecord.semester == sem
+                ).first()
+                
+                if existing_record:
+                    continue
+
                 record = AcademicRecord(
                     student_id=student.id,
                     course_id=course.id,
@@ -244,17 +254,24 @@ def seed_database():
         # Seed courses
         courses_added = seed_courses(db)
         
-        # Seed students
-        students_added = generate_sample_students(db, count=20)
+        # Import real students from Excel using import_students script logic
+        # For now, we assume import_students.py is run separately or we can call it here if desired.
+        # But per request, we are separating concerns. 
+        # Actually, let's call import_students here to ensure the full seeding process works.
         
-        # Generate academic records
-        records_added = generate_academic_records(db)
+        from scripts.import_students import import_students_to_db
+        students_added, updated = import_students_to_db(db)
+
+        # We do NOT generate fake academic records for real students by default anymore
+        # unless explicitly asked. The request says "student_csv should contsinn the data related to the studentt only...
+        # and we need to set the courses extracted in teh curriculm data"
         
+        records_added = 0 # No fake records for now
+
         print("\n" + "=" * 60)
         print("✅ Database seeding complete!")
         print(f"   📚 Courses: {courses_added}")
-        print(f"   👨‍🎓 Students: {students_added}")
-        print(f"   📊 Records: {records_added}")
+        print(f"   👨‍🎓 Students: {students_added} (Updated: {updated})")
         print("=" * 60)
         
     finally:
