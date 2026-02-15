@@ -26,11 +26,21 @@ class EligibilityAgent:
         api_key = os.getenv("GEMINI_API_KEY")
         model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
         
-        self.llm = ChatGoogleGenerativeAI(
-            model=model,
-            google_api_key=api_key,
-            temperature=0.1
-        )
+        try:
+            self.llm = ChatGoogleGenerativeAI(
+                model=model,
+                google_api_key=api_key,
+                temperature=0.1
+            )
+        except Exception as e:
+            print(f"⚠️ Failed to initialize LLM: {e}")
+            self.llm = None
+            
+    def _invoke_llm(self, prompt: str) -> str:
+        """Helper to invoke LLM safely"""
+        if not self.llm:
+            return "Recommendation system unavailable."
+        return self.llm.invoke(prompt)
     
     def analyze_eligibility(self, student_id: int) -> Dict:
         """

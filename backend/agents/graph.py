@@ -33,11 +33,15 @@ class RegistrationOrchestrator:
         api_key = os.getenv("GEMINI_API_KEY")
         model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
         
-        self.llm = ChatGoogleGenerativeAI(
-            model=model,
-            google_api_key=api_key,
-            temperature=0.3
-        )
+        try:
+            self.llm = ChatGoogleGenerativeAI(
+                model=model,
+                google_api_key=api_key,
+                temperature=0.3
+            )
+        except Exception as e:
+            print(f"⚠️ Failed to initialize Orchestrator LLM: {e}")
+            self.llm = None
     
     def handle_chat(self, student_id: int, message: str) -> Dict:
         """
