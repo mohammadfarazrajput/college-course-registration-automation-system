@@ -14,11 +14,11 @@ def init_session():
     if 'student' not in st.session_state:
         st.session_state.student = None
     
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
+    if 'chat_messages' not in st.session_state:
+        st.session_state.chat_messages = []
     
-    if 'selected_courses' not in st.session_state:
-        st.session_state.selected_courses = []
+    if 'selected_course_ids' not in st.session_state:
+        st.session_state.selected_course_ids = []
 
 
 def get_student():
@@ -36,8 +36,8 @@ def clear_session():
     """Clear all session data (logout)"""
     st.session_state.logged_in = False
     st.session_state.student = None
-    st.session_state.chat_history = []
-    st.session_state.selected_courses = []
+    st.session_state.chat_messages = []
+    st.session_state.selected_course_ids = []
 
 
 def is_logged_in():

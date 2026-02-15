@@ -6,6 +6,7 @@ RAG-powered chat assistant for queries
 import streamlit as st
 from utils.session import init_session, get_student, is_logged_in
 from utils.api_client import api_client
+from utils.ui import load_css
 from components.sidebar import render_sidebar
 from components.chat_widget import render_chat_message
 
@@ -16,6 +17,9 @@ st.set_page_config(
     page_icon="💬",
     layout="wide"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize and check login
 init_session()

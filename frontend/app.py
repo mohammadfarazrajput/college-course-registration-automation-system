@@ -9,6 +9,8 @@ from utils.api_client import api_client
 from components.sidebar import render_sidebar
 
 
+from utils.ui import load_css
+
 # Page config
 st.set_page_config(
     page_title="AMU Registration System",
@@ -16,6 +18,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize session
 init_session()
@@ -29,11 +34,11 @@ if is_logged_in():
     st.markdown("### Quick Links")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.page_link("pages/1_📊_Dashboard.py", label="📊 Dashboard", use_container_width=True)
+        st.page_link("pages/1_Dashboard.py", label="📊 Dashboard", use_container_width=True)
     with col2:
-        st.page_link("pages/2_💬_Chat.py", label="💬 Chat", use_container_width=True)
+        st.page_link("pages/2_Chat.py", label="💬 Chat", use_container_width=True)
     with col3:
-        st.page_link("pages/5_✅_Register.py", label="✅ Register", use_container_width=True)
+        st.page_link("pages/5_Register.py", label="✅ Register", use_container_width=True)
     st.stop()
 
 

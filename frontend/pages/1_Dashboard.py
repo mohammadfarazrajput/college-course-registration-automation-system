@@ -7,6 +7,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from utils.session import init_session, get_student, is_logged_in
 from utils.api_client import api_client
+from utils.ui import load_css
 from components.sidebar import render_sidebar
 
 
@@ -16,6 +17,9 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize and check login
 init_session()
@@ -186,15 +190,15 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("💬 Ask Assistant", use_container_width=True):
-        st.switch_page("pages/2_💬_Chat.py")
+        st.switch_page("pages/2_Chat.py")
 
 with col2:
     if st.button("📚 Browse Courses", use_container_width=True):
-        st.switch_page("pages/4_📚_Courses.py")
+        st.switch_page("pages/4_Courses.py")
 
 with col3:
     if can_register:
         if st.button("✅ Register Now", use_container_width=True, type="primary"):
-            st.switch_page("pages/5_✅_Register.py")
+            st.switch_page("pages/5_Register.py")
     else:
         st.button("✅ Register (Blocked)", use_container_width=True, disabled=True)

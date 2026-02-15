@@ -10,7 +10,10 @@ from typing import Generator
 import os
 from pathlib import Path
 
-from models import Base
+try:
+    from models import Base
+except ImportError:
+    from backend.models import Base
 
 # Database configuration
 DATABASE_DIR = Path(__file__).parent.parent / "data"

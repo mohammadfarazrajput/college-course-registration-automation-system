@@ -5,6 +5,7 @@ Marksheet upload and processing
 
 import streamlit as st
 from utils.session import init_session, get_student, is_logged_in
+from utils.ui import load_css
 from components.sidebar import render_sidebar
 
 
@@ -14,6 +15,9 @@ st.set_page_config(
     page_icon="📄",
     layout="wide"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize and check login
 init_session()
@@ -159,7 +163,7 @@ if uploaded_file is not None:
                 """)
                 
                 if st.button("📊 Go to Dashboard", use_container_width=False):
-                    st.switch_page("pages/1_📊_Dashboard.py")
+                    st.switch_page("pages/1_Dashboard.py")
 
 else:
     # No file uploaded yet

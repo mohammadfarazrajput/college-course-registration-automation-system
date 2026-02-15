@@ -9,7 +9,7 @@ import json
 import random
 from datetime import datetime
 
-sys.path.append(str(Path(__file__).parent.parent / "backend"))
+sys.path.append(str(Path(__file__).parent.parent))
 
 from backend.database import SessionLocal, init_db
 from backend.models import Student, Course, AcademicRecord

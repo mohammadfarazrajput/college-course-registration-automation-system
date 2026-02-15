@@ -75,8 +75,11 @@ class APIClient:
     def health_check(self) -> dict:
         """Check if backend is running"""
         try:
-            return self._get("/")
-        except:
+            response = self._get("/")
+            if "error" in response:
+                return {"status": "offline", "error": response["error"]}
+            return response
+        except Exception:
             return {"status": "offline"}
 
 

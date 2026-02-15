@@ -5,7 +5,7 @@ Processes ordinance PDFs and creates searchable vector store
 
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent / "backend"))
+sys.path.append(str(Path(__file__).parent.parent))
 
 from backend.services.document_processor import document_processor
 from backend.services.vector_store import vector_store

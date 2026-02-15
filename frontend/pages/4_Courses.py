@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 from utils.session import init_session, get_student, is_logged_in
 from utils.api_client import api_client
+from utils.ui import load_css
 from components.sidebar import render_sidebar
 
 
@@ -16,6 +17,9 @@ st.set_page_config(
     page_icon="📚",
     layout="wide"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize and check login
 init_session()
@@ -186,4 +190,4 @@ col1, col2, col3 = st.columns([2, 1, 2])
 
 with col2:
     if st.button("✅ Proceed to Registration", type="primary", use_container_width=True):
-        st.switch_page("pages/5_✅_Register.py")
+        st.switch_page("pages/5_Register.py")

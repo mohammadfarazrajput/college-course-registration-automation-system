@@ -6,6 +6,7 @@ Select courses and submit registration
 import streamlit as st
 from utils.session import init_session, get_student, is_logged_in
 from utils.api_client import api_client
+from utils.ui import load_css
 from components.sidebar import render_sidebar
 
 
@@ -15,6 +16,9 @@ st.set_page_config(
     page_icon="✅",
     layout="wide"
 )
+
+# Load custom CSS
+load_css()
 
 # Initialize and check login
 init_session()
@@ -264,10 +268,10 @@ with col2:
                 col1, col2 = st.columns(2)
                 with col1:
                     if st.button("📊 View Dashboard", use_container_width=True):
-                        st.switch_page("pages/1_📊_Dashboard.py")
+                        st.switch_page("pages/1_Dashboard.py")
                 with col2:
                     if st.button("💬 Ask Assistant", use_container_width=True):
-                        st.switch_page("pages/2_💬_Chat.py")
+                        st.switch_page("pages/2_Chat.py")
 
 # Help section
 st.markdown("---")

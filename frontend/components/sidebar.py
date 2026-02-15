@@ -44,11 +44,11 @@ def render_sidebar():
         # Navigation
         st.markdown("#### 📋 Navigation")
         st.page_link("app.py", label="🏠 Home", icon="🏠")
-        st.page_link("pages/1_📊_Dashboard.py", label="📊 Dashboard", icon="📊")
-        st.page_link("pages/2_💬_Chat.py", label="💬 Chat Assistant", icon="💬")
-        st.page_link("pages/3_📄_Upload.py", label="📄 Upload Marksheet", icon="📄")
-        st.page_link("pages/4_📚_Courses.py", label="📚 Browse Courses", icon="📚")
-        st.page_link("pages/5_✅_Register.py", label="✅ Register", icon="✅")
+        st.page_link("pages/1_Dashboard.py", label="📊 Dashboard", icon="📊")
+        st.page_link("pages/2_Chat.py", label="💬 Chat Assistant", icon="💬")
+        st.page_link("pages/3_Upload.py", label="📄 Upload Marksheet", icon="📄")
+        st.page_link("pages/4_Courses.py", label="📚 Browse Courses", icon="📚")
+        st.page_link("pages/5_Register.py", label="✅ Register", icon="✅")
         
         st.divider()
         
